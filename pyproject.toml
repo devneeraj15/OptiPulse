@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "optipulse"
+version = "1.0.0"
+authors = [
+  { name="Devne", email="devne@users.noreply.github.com" },
+]
+description = "Universal Cross-Platform Hardware Telemetry, RAM Optimizer & AI Development Readiness Engine"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: System :: Hardware",
+    "Topic :: System :: Monitoring",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+dependencies = [
+    "psutil>=5.9.0",
+]
+
+[project.scripts]
+optipulse = "optipulse.server:main"

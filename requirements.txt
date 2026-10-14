@@ -1,0 +1,4 @@
+# OptiPulse Dependencies
+# Core works with zero dependencies (pure Python standard library + OS calls),
+# but psutil is recommended for high-precision real-time metrics across all platforms.
+psutil>=5.9.0

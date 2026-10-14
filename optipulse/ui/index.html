@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OptiPulse | Hardware Telemetry & Optimization Center</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased p-4 md:p-8 select-none min-h-screen">
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 pointer-events-none"></div>
+
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Top Navigation Bar -->
+    <header class="glass-panel rounded-2xl p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-12 h-12 flex-shrink-0 glow-emerald">
+          <img src="assets/logo.svg" alt="OptiPulse" class="w-full h-full">
+        </div>
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+              OptiPulse
+            </h1>
+            <span id="osPlatform" class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              Windows
+            </span>
+            <span class="flex items-center gap-1 text-[11px] text-slate-400 font-mono">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block"></span>
+              LIVE
+            </span>
+          </div>
+          <p id="osName" class="text-xs text-slate-400 mt-0.5 font-mono">Loading OS details...</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center flex-wrap gap-2.5">
+        <div class="flex items-center gap-2 mr-2 text-xs text-slate-400 font-medium">
+          <input type="checkbox" id="chkAutoRefresh" checked class="rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0">
+          <label for="chkAutoRefresh" class="cursor-pointer">Auto-Poll (5s)</label>
+        </div>
+        <button id="btnCleanRam" class="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-emerald-950/40">
+          <span>🧹</span> Purge Inactive RAM
+        </button>
+        <button id="btnRescan" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition flex items-center gap-1.5">
+          <span id="rescanIcon">🔄</span> Re-Scan
+        </button>
+        <button id="btnExportJson" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-medium transition" title="Export Diagnostic JSON">
+          💾
+        </button>
+      </div>
+    </header>
+
+    <!-- Score & Health Banner -->
+    <section class="glass-panel rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border-emerald-500/20">
+      <div class="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+        <!-- Circular Score Progress Ring -->
+        <div class="relative w-36 h-36 flex-shrink-0 flex items-center justify-center">
+          <svg class="w-full h-full" viewBox="0 0 180 180">
+            <circle class="gauge-bg" cx="90" cy="90" r="80" stroke-width="12" fill="none" />
+            <circle id="scoreProgress" class="gauge-progress" cx="90" cy="90" r="80" stroke-width="12" stroke-linecap="round" fill="none" stroke="#10b981" />
+          </svg>
+          <div class="absolute flex flex-col items-center">
+            <span id="scoreValue" class="text-4xl font-extrabold tracking-tight text-white">--</span>
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mt-0.5">SCORE</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-center sm:justify-start gap-2">
+            <span id="scoreRating" class="text-xs font-bold uppercase tracking-wider text-emerald-400">ANALYZING SYSTEM...</span>
+          </div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mt-1 tracking-tight text-slate-100">
+            Workstation Performance Status
+          </h2>
+          <p id="scoreDescription" class="text-xs md:text-sm text-slate-400 mt-1 max-w-xl leading-relaxed">
+            Scanning hardware memory channels, CPU power governors, thermal throttling, and GPU acceleration.
+          </p>
+          <div class="flex flex-wrap items-center gap-3 mt-4 text-xs font-mono text-slate-400">
+            <span class="flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800">
+              <span class="text-emerald-400">●</span> <span id="uptimeHours">0h uptime</span>
+            </span>
+            <span class="flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800">
+              <span class="text-cyan-400">●</span> <span id="lastScanTime">Just now</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- System Telemetry 4-Column Grid -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- 1. Memory & Bandwidth -->
+      <div class="glass-panel rounded-2xl p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🧠</span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Memory & Bandwidth</h3>
+          </div>
+          <span id="ramUsedPct" class="text-xs font-mono font-bold text-emerald-400">0%</span>
+        </div>
+        <div>
+          <div class="flex items-baseline justify-between">
+            <span id="ramTotal" class="text-2xl font-extrabold text-white">-- GB</span>
+            <span id="ramFree" class="text-xs text-slate-400 font-mono">-- GB Free</span>
+          </div>
+          <div class="w-full bg-slate-800/80 rounded-full h-2 mt-2 overflow-hidden">
+            <div id="ramBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+          </div>
+        </div>
+        <div class="space-y-1.5 pt-2 border-t border-slate-800 text-xs">
+          <div class="flex justify-between text-slate-400">
+            <span>Bus Config:</span>
+            <span id="ramChannel" class="text-slate-200 font-mono text-[11px]">Loading...</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Paging Activity:</span>
+            <span id="ramPaging" class="text-slate-200 font-mono text-[11px]">0 pages/sec</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Swap/Pagefile:</span>
+            <span id="ramSwap" class="text-slate-200 font-mono text-[11px]">-- GB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. CPU & Power Governor -->
+      <div class="glass-panel rounded-2xl p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">⚡</span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">CPU & Governor</h3>
+          </div>
+          <span id="cpuUsage" class="text-xs font-mono font-bold text-cyan-400">0%</span>
+        </div>
+        <div>
+          <span id="cpuModel" class="text-sm font-bold text-white block truncate" title="CPU">Loading...</span>
+          <span id="cpuCores" class="text-xs text-slate-400 font-mono block mt-0.5">-- Cores / -- Threads</span>
+          <div class="w-full bg-slate-800/80 rounded-full h-2 mt-2 overflow-hidden">
+            <div id="cpuBar" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+          </div>
+        </div>
+        <div class="space-y-1.5 pt-2 border-t border-slate-800 text-xs">
+          <div class="flex justify-between text-slate-400">
+            <span>Power Scheme:</span>
+            <span id="cpuPowerPlan" class="text-slate-200 font-mono text-[11px] truncate">Performance</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Architecture:</span>
+            <span class="text-slate-200 font-mono text-[11px]">x86_64 / ARM</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Governor Throttle:</span>
+            <span class="text-emerald-400 font-mono text-[11px]">None (Unlocked)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. GPU & Acceleration -->
+      <div class="glass-panel rounded-2xl p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🎮</span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">GPU & Acceleration</h3>
+          </div>
+          <span id="gpuTemp" class="text-xs font-mono font-bold text-emerald-400">--°C</span>
+        </div>
+        <div>
+          <span id="gpuModel" class="text-sm font-bold text-white block truncate" title="GPU">Loading...</span>
+          <span id="gpuDriver" class="text-xs text-slate-400 font-mono block mt-0.5">Driver --</span>
+        </div>
+        <div class="space-y-1.5 pt-2 border-t border-slate-800 text-xs">
+          <div class="flex justify-between text-slate-400">
+            <span>VRAM Status:</span>
+            <span id="gpuVram" class="text-slate-200 font-mono text-[11px]">-- MB Free</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Backend:</span>
+            <span id="gpuAccel" class="text-slate-200 font-mono text-[11px]">CUDA / Metal</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Thermals:</span>
+            <span class="text-emerald-400 font-mono text-[11px]">Optimal Cooling</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. AI & Dev Stack -->
+      <div class="glass-panel rounded-2xl p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🤖</span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">AI Stack Readiness</h3>
+          </div>
+          <span id="cudaPill" class="px-2 py-0.5 text-xs font-semibold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">CUDA</span>
+        </div>
+        <div>
+          <div class="flex items-baseline justify-between">
+            <span class="text-xs text-slate-400">PyTorch:</span>
+            <span id="torchStatus" class="text-sm font-mono font-bold text-white">--</span>
+          </div>
+          <span id="torchDevice" class="text-[11px] text-cyan-400 font-mono block truncate mt-0.5">Targeting Hardware...</span>
+        </div>
+        <div class="space-y-1.5 pt-2 border-t border-slate-800 text-xs">
+          <div class="flex justify-between text-slate-400">
+            <span>Ollama Engine:</span>
+            <span id="ollamaStatus" class="text-slate-200 font-mono text-[11px]">Checking...</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Docker Engine:</span>
+            <span id="dockerStatus" class="text-slate-200 font-mono text-[11px]">Checking...</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Compiler Env:</span>
+            <span class="text-emerald-400 font-mono text-[11px]">Ready</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Actionable Optimization Playbook Section -->
+    <section class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            <span>🎯</span> Actionable Optimization Playbook
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">
+            Diagnostic insights and concrete steps to resolve hardware or configuration bottlenecks.
+          </p>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex items-center p-1 bg-slate-900 rounded-xl border border-slate-800 text-xs">
+          <button class="filter-tab active-tab px-3 py-1.5 rounded-lg font-medium transition bg-slate-800 text-white" data-filter="all">
+            All Diagnostics
+          </button>
+          <button class="filter-tab px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white" data-filter="action">
+            Action Required
+          </button>
+          <button class="filter-tab px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white" data-filter="optimal">
+            Optimal
+          </button>
+        </div>
+      </div>
+
+      <!-- Recommendation Cards List -->
+      <div id="recommendationsList" class="space-y-3">
+        <!-- Dynamically injected via app.js -->
+        <div class="p-8 text-center text-slate-500 glass-panel rounded-2xl">
+          <p class="text-sm">Auditing system hardware...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="pt-6 pb-4 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-mono">
+      <div>
+        <span>OptiPulse v1.0.0</span> • Open Source Hardware Telemetry & RAM Optimization Engine
+      </div>
+      <div class="flex items-center gap-4">
+        <span>Windows • macOS • Linux</span>
+        <a href="https://github.com" target="_blank" class="hover:text-slate-300 transition">GitHub Repo</a>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
