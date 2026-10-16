@@ -126,6 +126,13 @@ def run_cli_audit():
     print(f" [+] PyTorch Stack        : {torch_info.get('Version')} (CUDA: {torch_info.get('CudaAvailable')})")
     print(f" [+] AI Device Target     : {torch_info.get('AccelerationDevice')}")
     
+    batt = audit.get("Battery", {})
+    if batt.get("HasBattery"):
+        cycle_str = f"{batt.get('CycleCount'):,} Cycles" if batt.get("CycleCount") else "Cycles N/A"
+        health_str = f"{batt.get('HealthPercent')}% Health" if batt.get("HealthPercent") else "Health N/A"
+        cond_str = batt.get("Condition", "Normal")
+        print(f" [+] Battery & Cycles     : {batt.get('Percentage')}% ({batt.get('Status')}) | {cycle_str} | {health_str} ({cond_str})")
+    
     print("\n" + "-" * 65)
     print("              ACTIONABLE OPTIMIZATION PLAYBOOK")
     print("-" * 65)

@@ -42,27 +42,31 @@
 OptiPulse ships with an ultra-responsive, dark-mode glassmorphism dashboard running locally with zero bloat:
 
 ```
-+-------------------------------------------------------------------------------+
-|  ⚡ OptiPulse        [ Windows 11 AMD64 ]  ● LIVE                [ Purge RAM ]|
-+-------------------------------------------------------------------------------+
-|                                                                               |
-|     ( 100 )   WORKSTATION PERFORMANCE STATUS                                  |
-|     / 100     All subsystems operating at peak throughput.                    |
-|               0 swap thrashing, dual-channel bus engaged, CUDA active.        |
-|                                                                               |
-+-------------------+-------------------+-------------------+-------------------+
-| 🧠 RAM & BANDWIDTH| ⚡ CPU & GOVERNOR | 🎮 GPU ACCEL      | 🤖 AI STACK       |
-| 15.37 GB (7.0 GB) | Ryzen 5 4600H     | GTX 1650 Ti (45C) | PyTorch 2.6+cu124 |
-| Dual-Channel 3.2G | Ultimate Perf     | 3,935 MB Free     | CUDA Operational  |
-| 0 pages/sec swap  | 6 Cores / 12 Thr  | Driver 617.42     | Ollama Daemon OK  |
-+-------------------+-------------------+-------------------+-------------------+
-|                                                                               |
-|  🎯 ACTIONABLE OPTIMIZATION PLAYBOOK                                          |
-|  [OPTIMAL]  High-Bandwidth Bus: Dual-Channel (2 DIMMs @ 3200MHz)              |
-|  [OPTIMAL]  Zero Paging Bottleneck (0 Pages/Sec Swapping)                     |
-|  [OPTIMAL]  Hardware CUDA Acceleration Active (NVIDIA GTX 1650 Ti)            |
-|  [TIP]      Ollama Local Model Engine: Ready for offline LLM inference        |
-+-------------------------------------------------------------------------------+
++-------------------------------------------------------------------------------------------------+
+|  ⚡ OptiPulse        [ macOS 14 Sonoma (ARM64) ]  ● LIVE                           [ Purge RAM ]|
++-------------------------------------------------------------------------------------------------+
+|                                                                                                 |
+|     ( 95 )    WORKSTATION PERFORMANCE STATUS                                                    |
+|     / 100     All subsystems operating at peak throughput.                                      |
+|               0 swap thrashing, unified memory bus engaged, Apple Metal 3 active.               |
+|                                                                                                 |
++---------------------+---------------------+---------------------+-------------------------------+
+| 🧠 RAM & BANDWIDTH  | ⚡ CPU & GOVERNOR   | 🎮 GPU ACCEL        | 🔋 BATTERY & HEALTH           |
+| 16.0 GB (8.2 GB)    | Apple M2 Max        | Metal 3 UMA         | 85% (Battery Discharging)     |
+| Unified Memory UMA  | Dynamic QoS (12C)   | Dynamic VRAM        | 142 Cycles | 96.0% Capacity  |
+| 0 pages/sec swap    | Minimal Thrash      | Nominal Thermals    | Condition: Normal (Healthy)   |
++---------------------+---------------------+---------------------+-------------------------------+
+| 💾 STORAGE & HEALTH | 🤖 AI STACK                                                               |
+| 465.0 GB (210 GB)   | PyTorch 2.6.0 (Apple Metal MPS Active)                                    |
+| APFS Primary SSD    | Ollama Daemon Active | Docker Engine Ready                                |
++---------------------+---------------------------------------------------------------------------+
+|                                                                                                 |
+|  🎯 ACTIONABLE OPTIMIZATION PLAYBOOK                                                            |
+|  [OPTIMAL]  High-Bandwidth Bus: Apple Unified Memory Architecture (UMA)                         |
+|  [OPTIMAL]  Battery Health Optimal (96.0% Capacity, 142 Cycles)                                 |
+|  [OPTIMAL]  Apple Metal Performance Shaders (MPS) Active                                        |
+|  [OPTIMAL]  NVMe Storage Headroom & SMART Health Optimal                                        |
++-------------------------------------------------------------------------------------------------+
 ```
 
 ---
@@ -144,6 +148,7 @@ python3 -m optipulse --cli
 | **Instant RAM Purge** | ✅ Win32 API | ✅ `purge` | ✅ Buffer Sync | Trims unreferenced memory pages and frees standby cache without closing apps. |
 | **Dual-Channel Audit** | ✅ CIM/WMI | ✅ UMA Bus | ✅ DMI decode | Verifies whether your system is running in 64-bit single channel or 128-bit dual channel. |
 | **Paging & Swap Monitor**| ✅ Perf Counters | ✅ `vm_stat` | ✅ `/proc/meminfo`| Detects active disk thrashing before your start menu or terminal begins to lag. |
+| **Battery & Cycles** | ✅ XML Report | ✅ AppleSmartBattery | ✅ sysfs BAT | Audits recharge cycle counts, maximum health retention %, and thermal/voltage throttling. |
 | **GPU & Acceleration** | ✅ NVIDIA/Intel | ✅ Metal 3 UMA | ✅ ROCm/NVIDIA | Tracks temperatures, VRAM free space, and CUDA/MPS backend readiness. |
 | **AI Stack Readiness** | ✅ CUDA 12.x | ✅ PyTorch MPS | ✅ ROCm/CUDA | Verifies PyTorch hardware acceleration, local Ollama models, and Docker daemons. |
 | **0-100 Scoring Engine**| ✅ Dynamic | ✅ Dynamic | ✅ Dynamic | Deducts points for configuration flaws and provides exact copy-paste remediation commands. |

@@ -1,6 +1,7 @@
 """
 OptiPulse - Intelligent Optimization Engine & Diagnostic Advisor
 Generates a 0-100 System Optimization Score and actionable hardware/software recommendations.
+Includes Battery Cycle Count, Health Degradation & Native Memory Protection heuristics.
 """
 
 def analyze_system(audit_data):
@@ -25,8 +26,18 @@ def analyze_system(audit_data):
     pages_per_sec = mem_info.get("PagesPerSec", 0)
     swap_used = mem_info.get("SwapUsedGB", 0)
 
-    # Memory Capacity Check
-    if total_ram < 8.0:
+    # Memory Capacity Check with zero-detection guard
+    if total_ram <= 0.0:
+        suggestions.append({
+            "id": "ram_detection_unresolved",
+            "category": "Memory & RAM",
+            "severity": "tip",
+            "title": "Hardware Memory Sensor Query Pending",
+            "description": "System hardware memory bus query returned an unparsed payload. Install psutil (`pip install psutil`) for enhanced kernel memory access.",
+            "action": "Run `pip install psutil` or re-scan with admin privileges.",
+            "usecase": "Ensures detailed memory page breakdown in user-space."
+        })
+    elif total_ram < 8.0:
         score -= 20
         suggestions.append({
             "id": "ram_capacity_low",
@@ -249,7 +260,63 @@ def analyze_system(audit_data):
         })
 
     # =========================================================================
-    # 5. Local AI & Dev Tooling Stack
+    # 5. Battery & Power Health Analysis
+    # =========================================================================
+    if batt.get("HasBattery", False):
+        cycle_count = batt.get("CycleCount")
+        health_pct = batt.get("HealthPercent")
+        plugged_in = batt.get("PluggedIn", True)
+        batt_pct = batt.get("Percentage", 100)
+
+        # High Cycle Count & Wear Analysis
+        if cycle_count is not None and cycle_count > 1000:
+            score -= 5
+            suggestions.append({
+                "id": "battery_cycle_high",
+                "category": "Battery & Power Health",
+                "severity": "warning",
+                "title": f"High Battery Cycle Count ({cycle_count:,} Cycles - {health_pct or 'N/A'}% Health)",
+                "description": f"Battery has accumulated {cycle_count:,} charge cycles (OEM rated for 1,000 cycles). Chemical retention is at {health_pct}%.",
+                "action": "Keep your AC adapter connected for sustained AI model training and compilation to prevent voltage drop throttling.",
+                "usecase": "Protects against sudden system reboot or GPU frequency downclocking under heavy dual-channel load."
+            })
+        elif health_pct is not None and health_pct < 75.0:
+            score -= 5
+            suggestions.append({
+                "id": "battery_health_low",
+                "category": "Battery & Power Health",
+                "severity": "warning",
+                "title": f"Battery Wear Detected ({health_pct}% Maximum Capacity)",
+                "description": f"Battery maximum capacity has degraded to {health_pct}% of original factory design capacity.",
+                "action": "Ensure laptop is plugged into wall power during compute-intensive tasks.",
+                "usecase": "High power draw from CPU/GPU under load requires stable wall power on degraded batteries."
+            })
+        elif cycle_count is not None and health_pct is not None:
+            suggestions.append({
+                "id": "battery_health_optimal",
+                "category": "Battery & Power Health",
+                "severity": "optimal",
+                "title": f"Battery Health Optimal ({health_pct}% Capacity, {cycle_count:,} Cycles)",
+                "description": f"Battery chemistry is healthy with {health_pct}% retention across {cycle_count:,} charge cycles.",
+                "action": "Battery condition is optimal.",
+                "usecase": "Safe for on-the-go development sessions and mobile model prototyping."
+            })
+
+        # Low Battery Discharging
+        if not plugged_in and batt_pct < 25:
+            score -= 15
+            suggestions.append({
+                "id": "battery_low_discharging",
+                "category": "Battery & Power Health",
+                "severity": "critical",
+                "title": f"Battery Critically Low ({batt_pct}%) - Power Throttling Imminent",
+                "description": f"System is discharging on battery ({batt_pct}% remaining). Firmware will aggressively throttle CPU/GPU frequencies to prevent shutdown.",
+                "action": "Plug in your AC wall charger to unlock peak turbo frequencies.",
+                "usecase": "Prevents severe 50%+ slowdown in code compilation and terminal execution."
+            })
+
+    # =========================================================================
+    # 6. Local AI & Dev Tooling Stack
     # =========================================================================
     ollama_info = ai.get("Ollama", {})
     if ollama_info.get("Installed"):

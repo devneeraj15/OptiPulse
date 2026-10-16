@@ -96,6 +96,9 @@ function renderDashboard(data) {
   document.getElementById('cpuUsage').innerText = `${cpu.UsagePercent || 0}%`;
   document.getElementById('cpuBar').style.width = `${Math.min(100, cpu.UsagePercent || 0)}%`;
   document.getElementById('cpuPowerPlan').innerText = cpu.PowerProfile || 'Standard';
+  if (document.getElementById('cpuArch')) {
+    document.getElementById('cpuArch').innerText = `${data.OS?.Architecture || 'x86_64'} (${cpu.LogicalThreads || 0} Threads)`;
+  }
 
   // 5. GPU Card
   const gpu = data.GPUs?.[0] || {};
@@ -107,13 +110,73 @@ function renderDashboard(data) {
   document.getElementById('gpuTemp').innerText = gpu.TemperatureC === 'Nominal' ? 'Nominal' : `${gpu.TemperatureC}°C`;
   document.getElementById('gpuAccel').innerText = gpu.Acceleration || 'Standard';
 
-  // 6. AI & Dev Stack Card
+  // 6. Battery & Power Health Card
+  const batt = data.Battery || {};
+  if (batt.HasBattery) {
+    document.getElementById('battPct').innerText = `${batt.Percentage || 0}%`;
+    document.getElementById('battStatus').innerText = batt.Status || 'Active';
+    document.getElementById('battBar').style.width = `${Math.min(100, batt.Percentage || 0)}%`;
+    
+    // Cycles
+    document.getElementById('battCycles').innerText = batt.CycleCount 
+      ? `${batt.CycleCount.toLocaleString()} Cycles` 
+      : 'Sensor N/A';
+    
+    // Health %
+    if (batt.HealthPercent) {
+      document.getElementById('battHealth').innerText = `${batt.HealthPercent}% Maximum Capacity`;
+      document.getElementById('battHealth').className = batt.HealthPercent >= 80 
+        ? 'text-emerald-400 font-mono font-semibold text-[11px]' 
+        : (batt.HealthPercent >= 70 ? 'text-amber-400 font-mono font-semibold text-[11px]' : 'text-rose-400 font-mono font-semibold text-[11px]');
+    } else {
+      document.getElementById('battHealth').innerText = 'Health N/A';
+    }
+
+    // Capacity Wh
+    if (batt.DesignCapacityWh && batt.FullChargeCapacityWh) {
+      document.getElementById('battCapacity').innerText = `${batt.FullChargeCapacityWh} Wh / ${batt.DesignCapacityWh} Wh`;
+    } else {
+      document.getElementById('battCapacity').innerText = 'Li-Ion Chemistry';
+    }
+
+    // Condition Pill
+    const cond = batt.Condition || 'Normal';
+    const condPill = document.getElementById('battConditionPill');
+    if (condPill) {
+      condPill.innerText = cond.toUpperCase();
+      if (cond.toLowerCase().includes('normal') || cond.toLowerCase().includes('healthy')) {
+        condPill.className = 'px-2 py-0.5 text-xs font-semibold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      } else if (cond.toLowerCase().includes('fair') || cond.toLowerCase().includes('degraded')) {
+        condPill.className = 'px-2 py-0.5 text-xs font-semibold rounded bg-amber-500/10 text-amber-400 border border-amber-500/20';
+      } else {
+        condPill.className = 'px-2 py-0.5 text-xs font-semibold rounded bg-rose-500/10 text-rose-400 border border-rose-500/20';
+      }
+    }
+  } else {
+    document.getElementById('battPct').innerText = 'AC Power';
+    document.getElementById('battStatus').innerText = 'Desktop / Wall Powered';
+    document.getElementById('battBar').style.width = '100%';
+    document.getElementById('battCycles').innerText = 'No Battery (Wall Power)';
+    document.getElementById('battHealth').innerText = '100% Constant Delivery';
+    document.getElementById('battCapacity').innerText = 'Grid Powered';
+  }
+
+  // 7. Storage & Drive Health Card
+  const storage = data.Storage || {};
+  const primaryDrive = storage.Drives?.[0] || {};
+  document.getElementById('diskTotal').innerText = `${primaryDrive.TotalGB || 0} GB`;
+  document.getElementById('diskFree').innerText = `${primaryDrive.FreeGB || 0} GB Free`;
+  document.getElementById('diskBar').style.width = `${primaryDrive.PercentUsed || 0}%`;
+  document.getElementById('diskMount').innerText = `${primaryDrive.Mount || '/'} (${primaryDrive.FileSystem || 'SSD'})`;
+  document.getElementById('diskUsed').innerText = `${primaryDrive.UsedGB || 0} GB (${primaryDrive.PercentUsed || 0}%)`;
+
+  // 8. AI & Dev Stack Card
   const ai = data.AIStack || {};
   const torch = ai.PyTorch || {};
   document.getElementById('torchStatus').innerText = torch.Installed ? `v${torch.Version}` : 'Not Installed';
   document.getElementById('torchDevice').innerText = torch.AccelerationDevice || 'None';
   document.getElementById('cudaPill').innerText = torch.CudaAvailable ? 'CUDA ACTIVE' : (torch.MpsAvailable ? 'MPS ACTIVE' : 'CPU ONLY');
-  document.getElementById('cudaPill').className = torch.CudaAvailable || torch.mpsAvailable 
+  document.getElementById('cudaPill').className = torch.CudaAvailable || torch.MpsAvailable 
     ? 'px-2 py-0.5 text-xs font-semibold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
     : 'px-2 py-0.5 text-xs font-semibold rounded bg-amber-500/10 text-amber-400 border border-amber-500/20';
 
@@ -123,7 +186,7 @@ function renderDashboard(data) {
   const docker = ai.Docker || {};
   document.getElementById('dockerStatus').innerText = docker.Installed ? (docker.Running ? 'Active' : 'Installed (Stopped)') : 'Not Installed';
 
-  // 7. Render Recommendations
+  // 9. Render Recommendations
   renderRecommendations(data.Recommendations || []);
 }
 
